@@ -49,7 +49,7 @@
 - [x] 7.1 Ejecutar `.venv/bin/pytest -q` y `.venv/bin/pytest --cov=app --cov-report=term-missing --cov-fail-under=85`; verificar que no hay fallos ni pruebas omitidas inesperadas.
 - [x] 7.2 Ejecutar `openspec validate --all --strict`; verificar que no hay errores ni advertencias.
 - [x] 7.3 Arrancar la app con Gunicorn, ejecutar el flujo crear escenario → calcular → consultar historial y verificar que `/api/salud` responde 200 y que los resultados coinciden con la tabla de referencia.
-- [ ] 7.4 Verificar el historial de Git con `git log --oneline --graph` y que el repositorio remoto contiene `main`, la rama de trabajo y el tag `v1.0.0`.
+- [x] 7.4 Verificar el historial de Git con `git log --oneline --graph` y que el repositorio remoto contiene `main`, la rama de trabajo y el tag `v1.0.0`.
 
 ## Workflow follow-up
 
