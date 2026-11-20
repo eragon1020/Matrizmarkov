@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+  <div>
+    <p class="eyebrow">Modelo de Markov · 3 a 6 estados</p>
+    <h2>Predice cómo evoluciona tu sesión de gaming</h2>
+    <p class="hero-text">
+      Ajusta la matriz de transición, calcula las probabilidades en 1, 3, 5 y 10
+      pasos (cada paso equivale a 10 minutos) y observa la distribución
+      estacionaria de la cadena.
+    </p>
+  </div>
+  <div class="hero-formula">
+    <span>π<sub>n</sub> = π<sub>0</sub> · P<sup>n</sup></span>
+  </div>
+</section>
+
+{% if error %}
+<div class="alert" role="alert">{{ error }}</div>
+{% endif %}
+<div class="alert" id="mensaje-error" role="alert" hidden></div>
+
+<div class="toolbar">
+  <form method="get" action="{{ url_for('index') }}" class="scenario-form">
+    <label>
+      Escenario guardado
+      <select name="escenario">
+        <option value="">— Cálculo libre —</option>
+        {% for escenario in escenarios %}
+        <option value="{{ escenario.id }}" {% if escenario_id == escenario.id %}selected{% endif %}>
+          {{ escenario.nombre }}
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+    <button type="submit" class="btn btn-secondary">Cargar</button>
+  </form>
+  <p class="hint">El historial y los escenarios se guardan en SQLite.</p>
+</div>
+
+<div class="layout">
+  <section class="card">
+    <h3>1. Configura la cadena</h3>
+    <form method="post" action="{{ url_for('calcular') }}" id="form-markov">
+      <input type="hidden" name="escenario_id" value="{{ escenario_id or '' }}">
+
+      <label class="field">
+        Número de estados
+        <select id="n_estados" name="n_estados">
+          {% for n in range(3, 7) %}
+          <option value="{{ n }}" {% if estados|length == n %}selected{% endif %}>{{ n }} estados</option>
+          {% endfor %}
+        </select>
+      </label>
+
+      <div class="estados-grid" id="estados-nombres">
+        {% for estado in estados %}
+        <label class="field">
+          Estado {{ loop.index }}
+          <input type="text" name="e_{{ loop.index0 }}" value="{{ estado }}" maxlength="40" required>
+        </label>
+        {% endfor %}
+      </div>
+
+      <h4>Matriz de transición</h4>
+      <p class="hint">Cada fila debe sumar 1. Las columnas representan el estado destino.</p>
+      <div class="tabla-scroll">
+        <table class="matriz" id="tabla-matriz">
+          <thead>
+            <tr>
+              <th>Desde \ Hacia</th>
+              {% for estado in estados %}
+              <th>{{ estado }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for fila in matriz %}
+            {% set i = loop.index0 %}
+            <tr>
+              <th>{{ estados[i] }}</th>
+              {% for valor in fila %}
+              {% set j = loop.index0 %}
+              <td>
+                <input type="number" step="0.01" min="0" max="1"
+                       name="m_{{ i }}_{{ j }}" value="{{ '%.2f'|format(valor) }}" required>
+              </td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Distribución inicial</h4>
+      <div class="inicial-grid" id="inicial-grid">
+        {% for valor in distribucion_inicial %}
+        {% set i = loop.index0 %}
+        <label class="field">
+          <span class="inicial-nombre">{{ estados[i] }}</span>
+          <input type="number" step="0.01" min="0" max="1"
+                 name="p_{{ i }}" value="{{ '%.2f'|format(valor) }}" required>
+        </label>
+        {% endfor %}
+      </div>
+
+      <label class="field">
+        Pasos personalizados (opcional)
+        <input type="text" id="pasos_personalizados" name="pasos_personalizados"
+               value="{{ pasos_personalizados }}" placeholder="Ej: 2, 7, 20">
+      </label>
+
+      <div class="actions">
+        <button type="submit" class="btn btn-primary">Calcular</button>
+        <button type="reset" class="btn btn-secondary">Restablecer</button>
+      </div>
+
+      <div class="save-row">
+        <input type="text" id="nombre_escenario" placeholder="Nombre del escenario" maxlength="80">
+        <button type="button" id="btn-guardar" class="btn btn-secondary">Guardar escenario</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="card results">
+    <h3>2. Resultados</h3>
+
+    <div class="resumen" id="resumen-estacionaria">
+      {% for estado in estados %}
+      <div class="stat">
+        <span>{{ estado }}</span>
+        <strong>{{ estacionaria[loop.index0]|prob }}</strong>
+        <small>probabilidad estacionaria</small>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h4>Evolución por paso</h4>
+        <div class="chart-wrap"><canvas id="grafico-lineas"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h4>Comparación por paso</h4>
+        <div class="chart-wrap"><canvas id="grafico-barras"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h4>Distribución estacionaria</h4>
+        <div class="chart-wrap"><canvas id="grafico-dona"></canvas></div>
+      </div>
+    </div>
+
+    <h4>Mapa de calor de la matriz</h4>
+    <div class="mapa-calor" id="mapa-calor">
+      <table class="heatmap">
+        <thead>
+          <tr>
+            <th></th>
+            {% for estado in estados %}<th>{{ estado }}</th>{% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for fila in matriz %}
+          {% set i = loop.index0 %}
+          <tr>
+            <th>{{ estados[i] }}</th>
+            {% for valor in fila %}
+            <td style="background: rgba(79, 70, 229, {{ valor }}); color: {{ '#ffffff' if valor > 0.45 else '#1f2937' }}">{{ valor|prob }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <h4>Tabla de probabilidades</h4>
+    <div class="tabla-scroll">
+      <table class="resultados" id="tabla-resultados">
+        <thead>
+          <tr>
+            <th>Paso</th>
+            {% for estado in estados %}<th>{{ estado }}</th>{% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for fila in resultado.resultados %}
+          <tr>
+            <td>
+              {{ fila.paso }}
+              {% if fila.personalizado %}<span class="tag">personalizado</span>{% endif %}
+            </td>
+            {% for valor in fila.probabilidades %}<td>{{ valor|prob }}</td>{% endfor %}
+          </tr>
+          {% endfor %}
+          <tr class="fila-estacionaria">
+            <td>Estacionaria</td>
+            {% for valor in estacionaria %}<td>{{ valor|prob }}</td>{% endfor %}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>Paso a paso</h4>
+    <div class="paso-a-paso" id="paso-a-paso">
+      {% for fila in resultado.resultados %}
+      <details {% if fila.paso == 1 %}open{% endif %}>
+        <summary>Paso {{ fila.paso }}</summary>
+        <p>
+          π<sub>{{ fila.paso }}</sub> =
+          [{% for valor in fila.probabilidades %}{{ valor|prob }}{% if not loop.last %}, {% endif %}{% endfor %}]
+        </p>
+        <div class="tabla-scroll">
+          <table class="matriz-paso">
+            <tbody>
+              {% for renglon in fila.matriz %}
+              <tr>
+                {% for valor in renglon %}<td>{{ valor|prob }}</td>{% endfor %}
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </details>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+<section class="card history">
+  <h3>Historial reciente</h3>
+  {% if historial %}
+  <div class="tabla-scroll">
+    <table class="historial">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Escenario</th>
+          <th>Pasos</th>
+          <th>Distribución estacionaria</th>
+          <th>Fecha (UTC)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in historial %}
+        <tr>
+          <td>{{ item.id }}</td>
+          <td>{{ item.escenario_nombre or "Cálculo libre" }}</td>
+          <td>{{ item.pasos|join(", ") }}</td>
+          <td>
+            [{% for valor in item.estacionaria %}{{ valor|prob }}{% if not loop.last %}, {% endif %}{% endfor %}]
+          </td>
+          <td>{{ item.creado_en }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="hint">Todavía no hay cálculos registrados.</p>
+  {% endif %}
+</section>
+
+<script type="application/json" id="datos-resultado">{{ resultado|tojson }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% endblock %}
