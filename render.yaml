@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: matrizmarkov-eragon1020
+    runtime: python
+    plan: free
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: gunicorn --workers 1 --threads 4 --worker-class gthread --timeout 120 --access-logfile - --bind 0.0.0.0:$PORT wsgi:app
+    healthCheckPath: /api/salud
+    autoDeployTrigger: commit
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.14.10
+      - key: SECRET_KEY
+        generateValue: true
+      - key: APP_ENV
+        value: production
+      - key: DATABASE_PATH
+        value: /opt/render/project/src/data/markov.db
+    # El plan gratuito usa un sistema de archivos efímero: el historial se
+    # reinicializa en cada deploy o reinicio. Para persistirlo, cambia a un plan
+    # pago y descomenta el disco (y ajusta DATABASE_PATH a /var/data/markov.db).
+    # disk:
+    #   name: matrizmarkov-data
+    #   mountPath: /var/data
+    #   sizeGB: 1
