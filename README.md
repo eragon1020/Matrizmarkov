@@ -247,12 +247,14 @@ El cambio se gestionó con el esquema `spec-driven`:
 propuesta → especificación → diseño → tareas → implementación → archivo
 ```
 
-Artefactos del cambio `cadenas-markov-gaming`:
+El cambio `cadenas-markov-gaming` quedó **archivado** y sus requisitos se promovieron
+a la especificación vigente:
 
-- `openspec/changes/cadenas-markov-gaming/proposal.md`
-- `openspec/changes/cadenas-markov-gaming/specs/prediccion-markov/spec.md`
-- `openspec/changes/cadenas-markov-gaming/design.md`
-- `openspec/changes/cadenas-markov-gaming/tasks.md`
+- `openspec/changes/archive/2026-11-19-cadenas-markov-gaming/proposal.md`
+- `openspec/changes/archive/2026-11-19-cadenas-markov-gaming/specs/prediccion-markov/spec.md`
+- `openspec/changes/archive/2026-11-19-cadenas-markov-gaming/design.md`
+- `openspec/changes/archive/2026-11-19-cadenas-markov-gaming/tasks.md`
+- `openspec/specs/prediccion-markov/spec.md` (especificación vigente)
 
 Comandos usados:
 
