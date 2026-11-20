@@ -25,6 +25,14 @@ implementación y las pruebas.
 > mismo motor Python**. La aplicación interactiva con Flask y SQLite se ejecuta en
 > Render o en local.
 
+## Estado de la entrega
+
+- [x] Repositorio público con código, especificaciones OpenSpec, pruebas y README.
+- [x] Integración continua con GitHub Actions en verde.
+- [x] Cambio OpenSpec archivado y especificación promovida.
+- [x] Landing publicada en GitHub Pages.
+- [x] Aplicación interactiva desplegada en Render.
+
 ![Vista de la aplicación](docs/captura.png)
 
 ## Tema y modelo
@@ -275,6 +283,8 @@ Git y GitHub.
 
 ## Despliegue en Render
 
+**Estado:** desplegado en <https://matrizmarkov-eragon1020.onrender.com> (plan gratuito).
+
 El repositorio incluye `render.yaml` con un servicio web gratuito:
 
 - Runtime Python 3.14.10.
@@ -284,7 +294,7 @@ El repositorio incluye `render.yaml` con un servicio web gratuito:
 - Variables: `SECRET_KEY`, `APP_ENV`, `DATABASE_PATH`, `PYTHON_VERSION`.
 - Auto-deploy en cada push a `main`.
 
-Pasos:
+Pasos para reproducir el despliegue:
 
 1. Crear una cuenta en [Render](https://render.com) y conectar GitHub.
 2. Pulsar el botón **Deploy to Render** del inicio del README o entrar en
@@ -300,8 +310,10 @@ Limitaciones del plan gratuito:
 
 ## GitHub Pages
 
+**Estado:** publicado en <https://eragon1020.github.io/Matrizmarkov/>.
+
 La carpeta `docs/` contiene la landing estática generada con
-`python scripts/build_docs.py`. Para publicarla:
+`python scripts/build_docs.py`. Para reproducir la publicación:
 
 1. Ir a `Settings → Pages`.
 2. Seleccionar `Deploy from a branch`.
